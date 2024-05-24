@@ -55,6 +55,7 @@ zad1 <- data %>%
   group_by(src) %>%
   summarise(bytes_amount = sum(bytes)) %>%
   top_n(n = 1, wt = bytes_amount)
+zad1 |> collect()
 cat(zad1$src)
 ```
 
@@ -83,6 +84,7 @@ zad2 <- data %>%
   summarise(bytes_amount = sum(bytes)) %>%
   filter(src != "13.37.84.125") %>%
   top_n(1, wt = bytes_amount)
+zad2 |> collect()
 
 cat(zad2$src)
 ```
@@ -117,6 +119,7 @@ zad3 <- data %>%
   mutate(average_port_traffic = mean(bytes_ip_port)) %>%
   ungroup() %>%
   top_n(1, bytes_ip_port / average_port_traffic)
+zad3 |> collect()
 cat(zad3$src)
 ```
 
@@ -136,7 +139,7 @@ zad4 <- data%>%
             count = n()) %>%
   filter(avgBytes - minBytes < 10 & minBytes != maxBytes) %>%
   select(port)
-zad4
+zad4 |> collect()
 ```
 
 group_by(port) - группирует данные по столбцу port, чтобы выполнить агрегацию на уровне каждого уникального значения port.
@@ -165,7 +168,7 @@ zad5 <- data %>%
   summarise(anomaly = max(bytes) - min(bytes)) %>%
   filter(anomaly == max(anomaly)) %>%
   select(port)
-
+zad5 |> collect()
 cat(zad5$port)
   
 ```
@@ -183,6 +186,33 @@ select(port) - выбирает только столбец port.
 Нашу сеть только что внесли в списки спам-ферм. Один из хостов сети получает множество команд от панели C&C, ретранслируя их внутри сети. В обычных условиях причин для такого активного взаимодействия внутри сети у данного хоста нет.
 
 Определите IP такого хоста.
+
+```{r}
+zad6 <- data %>%
+  filter(str_detect(src, "^12\\.") | str_detect(src, "^13\\.") | str_detect(src, "^14\\.")) %>%
+  filter(str_detect(dst, "^12\\.") | str_detect(dst, "^13\\.") | str_detect(dst, "^14\\.")) %>%
+  group_by(src) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  slice_head(n = 1)
+zad6 |> collect()
+```
+filter(str_detect(src, "^12\.") | str_detect(src, "^13\.") | str_detect(src, "^14\.")):
+filter(): Функция, используемая для отбора строк данных.
+str_detect(src, "^12\\."): Функция из пакета stringr, которая проверяет, соответствует ли строка src шаблону ^12\\.. Шаблон ^12\\. означает, что строка должна начинаться с 12..
+|: Логический оператор "ИЛИ", объединяющий несколько условий.
+Повторяется для ^13\\. и ^14\\., таким образом фильтруя строки, где src начинается с 12., 13., или 14..
+filter(str_detect(dst, "^12\.") | str_detect(dst, "^13\.") | str_detect(dst, "^14\.")):
+Аналогично предыдущему шагу, этот фильтр отбирает строки, где dst начинается с 12., 13., или 14..
+group_by(src):
+Группировка данных по столбцу src. Это позволяет применять агрегирующие функции к каждой группе отдельно.
+summarise(count = n()):
+summarise(): Создает новый фрейм данных с одним или несколькими сводными столбцами.
+count = n(): Создает столбец count, который содержит количество строк в каждой группе (где группа определяется по src).
+arrange(desc(count)):
+Сортировка фрейма данных по столбцу count в порядке убывания (desc означает "по убыванию").
+slice_head(n = 1):
+Выбирает первую строку из отсортированного фрейма данных. В данном контексте это строка с максимальным значением count.
 
 ## Вывод
 
